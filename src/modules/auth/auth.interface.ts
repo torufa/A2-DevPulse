@@ -4,3 +4,8 @@ export interface IUserSignup {
   password: string;
   role: string;
 }
+
+export interface IUserLogin {
+  email: string;
+  password: string;
+}

@@ -21,7 +21,26 @@ const userSignup = async(req:Request, res: Response) => {
     }
 }
 
+const userLogin = async(req: Request, res: Response) => {
+    try{
+        const result = await authService.userLoginIntoDb(req.body);
+        sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "Login successful",
+          data: result
+        });
+    }catch(error){
+        sendResponse(res, {
+          statusCode: 401,
+          success: false,
+          message: "Unauthorized",
+          error: error,
+        });
+    }
+}
 
 export const authController = {
     userSignup,
+    userLogin
 }
