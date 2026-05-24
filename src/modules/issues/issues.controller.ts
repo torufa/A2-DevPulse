@@ -55,7 +55,7 @@ const getSingleIssue = async (req: Request, res: Response) => {
       return sendResponse(res, {
         statusCode: 404,
         success: false,
-        message: "Issue Not Found!",
+        message: "Issue Not Found",
         data: null,
       });
     }
@@ -105,10 +105,49 @@ const updateIssue = async (req: Request, res: Response) => {
   }
 };
 
+const deleteIssue = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const issue = await issueService.getSingleIssueFromDB(id as string);
+
+    const user = req.user as JwtPayload;
+
+    if (!issue) {
+      return sendResponse(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue Not Found",
+      });
+    }
+
+    if (user.role === "maintainer") {
+      const result = await issueService.deleteIssueFromDB(id as string);
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Issue deleted successfully",
+      });
+    } else {
+      sendResponse(res, {
+        statusCode: 403,
+        success: false,
+        message: "Don't have permission to delete",
+      });
+    }
+  } catch (error: any) {
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: "Don't have permission to delete"
+    });
+  }
+};
 
 export const issuesController = {
   createIssue,
   getAllIssues,
   getSingleIssue,
   updateIssue,
+  deleteIssue
 };
