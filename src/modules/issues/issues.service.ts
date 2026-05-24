@@ -1,10 +1,11 @@
 import { pool } from "../../db";
-import type { IIssue, IIssueQuery } from "./issues.interface";
+import type { IIssue, IIssueInfo, IIssueQuery } from "./issues.interface";
 
 
 
 const createIssueIntoDB = async (payload: IIssue, reporter_id: number) => {
-  const { title, description, type, status } = payload;
+  const { title, description, type } = payload;
+  const status = payload.status || "open";
 
   const result = await pool.query(
     `
@@ -54,27 +55,30 @@ const getAllIssuesFromDB = async(query: IIssueQuery) => {
   return result;
 };
 
-
 const getSingleIssueFromDB = async (id: string) => {
-  const issueData = await pool.query(`
+  const issueData = await pool.query(
+    `
     SELECT * FROM issues
     WHERE id=$1
-    `,[id]);
+    `,
+    [id],
+  );
 
   if (!issueData.rows.length) {
-    throw new Error("Issue Not Found!");
+    return null;
   }
 
-  const issue = issueData.rows[0]
-
-  const userData = await pool.query(`
+  const userData = await pool.query(
+    `
   SELECT id , name , role FROM users
   WHERE id=$1
-  `,[issue.reporter_id]);
+  `,
+    [issueData.rows[0].reporter_id],
+  );
 
   const result = {
-    ...issue,
-    reporter: issue,
+    ...issueData.rows[0],
+    reporter: userData.rows[0],
   };
 
   delete result.reporter_id;
@@ -82,10 +86,69 @@ const getSingleIssueFromDB = async (id: string) => {
   return result;
 };
 
+const updateIssueIntoDB = async (
+  id: number,
+  payload: IIssueInfo,
+  reporter_role: string,
+  userId: number,
+) => {
+  const checkIssue = await pool.query(
+    `
+    SELECT * FROM issues
+    WHERE id = $1
+  `,
+    [id],
+  );
 
+  const issue = checkIssue.rows[0];
+  if (!issue) {
+    throw new Error("Issue not found");
+  }
+
+  const { title, description, type, status } = payload;
+  const role = {
+    contributor: "contributor",
+    maintainer: "maintainer",
+  };
+
+  if (reporter_role === role.contributor) {
+    if (issue.reporter_id !== userId) {
+      throw new Error("You're not allowed to update");
+    }
+
+    if (issue.status !== "open") {
+      throw new Error("Can not Update");
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE issues
+        SET title = COALESCE($1,title), description = COALESCE($2,description), type = COALESCE($3,type), status = COALESCE($4,status)
+        WHERE id = $5
+
+        RETURNING *
+    `,
+      [title, description, type, status, id],
+    );
+    return result.rows[0] ? result.rows[0] : "Not Updated";
+  }
+
+  const result = await pool.query(
+    `
+      UPDATE issues
+      SET title = COALESCE($1,title), description = COALESCE($2,description), type = COALESCE($3,type), status = COALESCE($4,status)
+      WHERE id = $5
+
+      RETURNING *
+    `,
+    [title, description, type, status, id],
+  );
+  return result.rows[0] ? result.rows[0] : "Not Updated";
+}; 
 
 export const issueService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
   getSingleIssueFromDB,
+  updateIssueIntoDB,
 };

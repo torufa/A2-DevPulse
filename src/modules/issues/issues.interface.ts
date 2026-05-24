@@ -6,7 +6,16 @@ export interface IIssue {
 }
 
 export interface IIssueQuery {
-  sort: 'newest' | 'oldest' 
-  type?: 'bug' | 'feature_request',
-  status?: 'open' | 'in_progress' | 'resolved'
+  sort: "newest" | "oldest";
+  type?: "bug" | "feature_request";
+  status?: "open" | "in_progress" | "resolved";
+}
+
+export interface IIssueInfo {
+  id: number;
+  title: string;
+  description: string;
+  type: "bug" | "feature_request";
+  status: "open" | "in_progress" | "resolved";
+  reporter_id: number;
 }

@@ -12,5 +12,6 @@ const roles = {
 issuesRouter.post("/", auth(roles.contributor, roles.maintainer), issuesController.createIssue);
 issuesRouter.get("/", issuesController.getAllIssues);
 issuesRouter.get("/:id", issuesController.getSingleIssue);
+issuesRouter.patch("/:id", auth(roles.contributor, roles.maintainer), issuesController.updateIssue);
 
 export default issuesRouter;

@@ -19,7 +19,7 @@ const createIssue = async (req: Request, res: Response) => {
         sendResponse(res, {
           statusCode: 500,
           success: false,
-          message: "Something went wrong",
+          message: "Issue creation failed",
           error: error
         });
     }
@@ -38,36 +38,77 @@ const getAllIssues = async (req: Request, res: Response) => {
     });
   } catch (error) {
     sendResponse(res, {
-      statusCode: 500,
+      statusCode: 404,
       success: false,
-      message: "Something went wrong",
+      message: "Issues not found",
       error: error,
     });
   }
 };
 
-const getSingleIssue = async (req: Request,res: Response) => {
+const getSingleIssue = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const result = await issueService.getSingleIssueFromDB(id as string);
-    sendResponse(res, {
+
+    if (!result) {
+      return sendResponse(res, {
+        statusCode: 404,
+        success: false,
+        message: "Issue Not Found!",
+        data: null,
+      });
+    }
+
+    return sendResponse(res, {
       statusCode: 200,
       success: true,
       message: "Issue retrived successfully",
       data: result,
     });
-  }catch (error) {
+  } catch (error) {
     sendResponse(res, {
-      statusCode: 500,
+      statusCode: 404,
       success: false,
-      message: 'Issue not found',
+      message: "Issue not found",
       error: error,
     });
   }
-}
+};
+
+const updateIssue = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as JwtPayload;
+    const reporter_role = user.role;
+    const id = req.params.id;
+    const body = req.body;
+    const result = await issueService.updateIssueIntoDB(
+      Number(id),
+      body,
+      reporter_role,
+      user.id,
+    );
+
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    return sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: "Issue update failed",
+      error,
+    });
+  }
+};
+
 
 export const issuesController = {
   createIssue,
   getAllIssues,
   getSingleIssue,
+  updateIssue,
 };
