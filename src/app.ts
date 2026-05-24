@@ -10,6 +10,12 @@ app.use(express.json())
 app.use(express.text())
 app.use(express.urlencoded({extended: true}))
 
+app.use(
+  cors({
+    origin: "https://devpulse-eight-eta.vercel.app/",
+  }),
+);
+
 app.get('/', (req: Request, res: Response)=>{
     res.status(200).json({
       message: "DevPulse Server",
